@@ -1,24 +1,28 @@
-import math, os, pygame
+"""Ejecuta con: python main.py (requiere pygame)."""
+
+import math
+import os
 
 os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
 
-from modelo import ALTO, ANCHO, DURACION, Partida
+import pygame
 
-FONDO = (12, 19, 35)
-PANEL = (22, 34, 53)
-BORDE = (45, 63, 84)
-BLANCO = (233, 242, 250)
-GRIS = (149, 168, 190)
-VERDE = (77, 235, 174)
-ORO = (255, 210, 90)
-ROJO = (255, 107, 123)
+from modelo import ALTO, ANCHO, DURACION, Partida
+from tema_halloween import (
+    BLANCO, BORDE, FONDO, GRIS, NARANJA, ORO, PANEL, ROJO, VERDE,
+    TemaHalloween,
+)
 
 
 class Juego:
     def __init__(self):
         pygame.init()
         self.pantalla = pygame.display.set_mode((ANCHO, ALTO))
-        pygame.display.set_caption("Coin Hunter 2D")
+        pygame.display.set_caption("Coin Hunter 2D · Noche de Halloween")
+        self.tema = TemaHalloween()
+        icono = pygame.Surface((40, 40), pygame.SRCALPHA)
+        self.tema.calabaza(icono, 20, 22, 1.2)
+        pygame.display.set_icon(icono)
         self.reloj = pygame.time.Clock()
         self.fuentes = {
             "pequena": pygame.font.SysFont("segoeui", 16),
@@ -46,9 +50,10 @@ class Juego:
 
     def boton(self, rect, etiqueta, secundario=False):
         hover = rect.collidepoint(pygame.mouse.get_pos())
-        color = BORDE if secundario else VERDE
+        color = BORDE if secundario else NARANJA
         if hover:
-            color = (65, 83, 104) if secundario else (116, 249, 196)
+            color = (112, 78, 138) if secundario else (255, 186, 99)
+        pygame.draw.rect(self.pantalla, (13, 8, 23), rect.move(0, 4), border_radius=12)
         pygame.draw.rect(self.pantalla, color, rect, border_radius=12)
         self.texto(
             etiqueta, rect.centerx, rect.y + (7 if secundario else 12),
@@ -107,34 +112,24 @@ class Juego:
                         self.volver_inicio()
 
     def fondo(self):
-        self.pantalla.fill(FONDO)
-        for x in range(24, ANCHO, 40):
-            for y in range(24, ALTO, 40):
-                pygame.draw.circle(self.pantalla, (28, 41, 59), (x, y), 1)
+        self.tema.fondo(self.pantalla, pygame.time.get_ticks() / 1000)
 
     def moneda(self, x, y):
-        pygame.draw.circle(self.pantalla, (89, 66, 30), (x, y + 2), 16)
-        pygame.draw.circle(self.pantalla, ORO, (x, y), 14)
-        pygame.draw.circle(self.pantalla, (224, 162, 54), (x, y), 10, 2)
-        pygame.draw.line(self.pantalla, (255, 239, 173), (x, y - 6), (x, y + 6), 3)
+        self.tema.dulce(self.pantalla, x, y)
 
     def bomba(self, x, y):
-        pygame.draw.line(self.pantalla, ORO, (x + 4, y - 11), (x + 9, y - 18), 3)
-        pygame.draw.circle(self.pantalla, ROJO, (x + 10, y - 19), 3)
-        pygame.draw.circle(self.pantalla, (75, 40, 58), (x, y), 14)
-        pygame.draw.circle(self.pantalla, ROJO, (x, y), 14, 2)
-        pygame.draw.line(self.pantalla, ROJO, (x - 4, y - 4), (x + 4, y + 4), 2)
-        pygame.draw.line(self.pantalla, ROJO, (x + 4, y - 4), (x - 4, y + 4), 2)
+        self.tema.bomba(self.pantalla, x, y)
 
     def inicio(self):
-        self.texto("UN PEQUEÑO RETO. MUCHAS MONEDAS.", 400, 60, VERDE, "pequena", True)
+        self.texto("TRUCO, TRATO... ¡Y MUCHOS DULCES!", 400, 60, NARANJA, "pequena", True)
         self.texto("Coin Hunter", 400, 91, fuente="titulo", centro=True)
-        self.texto("Recoge monedas. Esquiva bombas. Supera tu marca.", 400, 159, GRIS, centro=True)
+        self.texto("Atrapa dulces. ¡Cuidado con las bombas!", 400, 159, GRIS, centro=True)
         pygame.draw.rect(self.pantalla, PANEL, (150, 220, 500, 280), border_radius=20)
+        pygame.draw.rect(self.pantalla, BORDE, (150, 220, 500, 280), 1, border_radius=20)
         self.texto("¿Cómo te llamas?", 230, 248, fuente="media")
         campo = pygame.Rect(230, 300, 340, 53)
         pygame.draw.rect(self.pantalla, FONDO, campo, border_radius=10)
-        pygame.draw.rect(self.pantalla, VERDE, campo, 1, border_radius=10)
+        pygame.draw.rect(self.pantalla, NARANJA, campo, 1, border_radius=10)
         # Conserva hasta 50 caracteres y muestra el final si no caben en el campo.
         visible = self.nombre
         while self.fuentes["normal"].size(visible)[0] > campo.width - 34:
@@ -142,12 +137,12 @@ class Juego:
         self.texto(visible or "Escribe tu nombre", 246, 312, BLANCO if visible else GRIS)
         if pygame.time.get_ticks() % 1000 < 500:
             cursor_x = 246 + self.fuentes["normal"].size(visible)[0]
-            pygame.draw.line(self.pantalla, VERDE, (cursor_x, 312), (cursor_x, 338), 2)
+            pygame.draw.line(self.pantalla, NARANJA, (cursor_x, 312), (cursor_x, 338), 2)
         if self.error:
             self.texto(self.error, 400, 367, ROJO, "pequena", True)
         else:
-            self.texto("45 segundos · 3 vidas · 10 puntos por moneda", 400, 367, GRIS, "pequena", True)
-        self.boton(self.boton_principal, "Comenzar partida  →")
+            self.texto("45 segundos · 3 vidas · 10 puntos por dulce", 400, 367, GRIS, "pequena", True)
+        self.boton(self.boton_principal, "¡Dulce o travesura!  →")
         self.texto("← → o A / D: moverse     P: pausa     Enter: comenzar", 400, 530, GRIS, "pequena", True)
 
     def tablero(self):
@@ -157,7 +152,7 @@ class Juego:
         self.texto(f"{partida.puntuacion:03}", 36, 46, ORO, "media")
         self.texto("VIDAS", 215, 27, GRIS, "pequena")
         for i in range(3):
-            pygame.draw.circle(self.pantalla, ROJO if i < partida.vidas else BORDE, (227 + i * 25, 66), 8)
+            self.tema.calabaza(self.pantalla, 227 + i * 28, 66, 0.65, apagada=i >= partida.vidas)
         self.texto("TIEMPO", 410, 27, GRIS, "pequena")
         self.texto(f"{math.ceil(partida.restante):02}s", 410, 46, VERDE, "media")
         nombre = partida.nombre_jugador
@@ -175,28 +170,27 @@ class Juego:
                 self.bomba(*centro)
         if not partida.inmune or pygame.time.get_ticks() % 160 < 80:
             cuerpo = pygame.Rect(round(partida.jugador_x), partida.jugador_y, partida.jugador_ancho, partida.jugador_alto)
-            pygame.draw.rect(self.pantalla, (27, 78, 75), cuerpo.move(0, 5), border_radius=10)
-            pygame.draw.rect(self.pantalla, VERDE, cuerpo, border_radius=10)
-            for dx in (20, 43):
-                pygame.draw.circle(self.pantalla, FONDO, (cuerpo.x + dx, cuerpo.y + 13), 4)
+            self.tema.fantasma(self.pantalla, cuerpo)
         pygame.draw.line(self.pantalla, BORDE, (16, ALTO - 34), (ANCHO - 16, ALTO - 34))
         self.texto("← → / A D   MOVERSE", 28, ALTO - 26, GRIS, "pequena")
-        self.texto("MONEDA +10     BOMBA −1 VIDA", 475, ALTO - 26, GRIS, "pequena")
+        self.texto("DULCE +10     BOMBA −1 VIDA", 490, ALTO - 26, GRIS, "pequena")
         if partida.pausada:
             velo = pygame.Surface((ANCHO, ALTO), pygame.SRCALPHA)
-            velo.fill((5, 10, 22, 215))
+            velo.fill((14, 8, 26, 225))
             self.pantalla.blit(velo, (0, 0))
-            self.texto("Pausa", 400, 235, fuente="titulo", centro=True)
+            self.tema.calabaza(self.pantalla, 400, 200, 1.6)
+            self.texto("Pausa embrujada", 400, 235, fuente="titulo", centro=True)
             self.texto("Pulsa P o Esc para continuar", 400, 315, GRIS, centro=True)
 
     def resultado(self):
         partida = self.partida
-        self.texto("¡TIEMPO COMPLETADO!" if partida.vidas else "¡SIGUE INTENTÁNDOLO!", 400, 65, VERDE, "pequena", True)
-        self.texto("Fin de la partida", 400, 96, fuente="titulo", centro=True)
+        self.texto("¡SOBREVIVISTE A LA NOCHE!" if partida.vidas else "¡LAS BOMBAS TE ASUSTARON!", 400, 65, NARANJA, "pequena", True)
+        self.texto("Fin de la cacería", 400, 96, fuente="titulo", centro=True)
         pygame.draw.rect(self.pantalla, PANEL, (150, 195, 500, 335), border_radius=20)
+        pygame.draw.rect(self.pantalla, BORDE, (150, 195, 500, 335), 1, border_radius=20)
         self.texto("TU PUNTUACIÓN", 400, 223, GRIS, "pequena", True)
         self.texto(partida.puntuacion, 400, 248, ORO, "titulo", True)
-        self.texto(f"Monedas recogidas: {partida.puntuacion // 10}", 400, 326, centro=True)
+        self.texto(f"Dulces recogidos: {partida.puntuacion // 10}", 400, 326, centro=True)
         self.texto("Esta versión todavía no guarda las partidas.", 400, 368, GRIS, "pequena", True)
         self.boton(self.boton_principal, "Volver a jugar  ·  Enter")
         self.boton(self.boton_secundario, "Cambiar jugador  ·  N", secundario=True)
